@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Class Room</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+        <script src="https://preview.babylonjs.com/ammo.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+      html,
+      body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+      .modal {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transform: scaleX(1.1) scaleY(1.1);
+        transition: visibility 0s linear 0.25s, opacity 0.25s 0s, transform 0.25s;
+        font-family: sans-serif;
+      }
+
+      .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 1rem 1.5rem;
+        width: 60%;
+        height: 60%;
+        border-radius: 0.5rem;
+        z-index: 99000 !important;
+
+      }
+
+      .close-button {
+        float: right;
+        width: 1.5rem;
+        line-height: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 0.25rem;
+        background-color: lightgray;
+      }
+
+      .close-button:hover {
+        background-color: darkgray;
+      }
+
+      .show-modal {
+        opacity: 1;
+        visibility: visible;
+        transform: scaleX(1.0) scaleY(1.0);
+        transition: visibility 0s linear 0s, opacity 0.25s 0s, transform 0.25s;
+      }
+
+
+    </style>
+    </head>
+<body>
+    <div class="modal">
+      <div class="modal-content">
+        <iframe id="iframe" src="https://polygon.brolab.io" width=100% height=100%></iframe>
+      </div>
+    </div>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+      var modal = document.querySelector(".modal");
+      var trigger = document.querySelector(".trigger");
+      var iframe = document .querySelector("#iframe");
+      function toggleModal(nftId) {
+        var nftLink = "https://polygon.brolab.io/nfts/" + nftId;
+        if (nftId == 0) {
+            nftLink = "https://solana.brolab.io/collections/NyXgPoqcioPJAmSkAvwLXuAvcfwsKbn2d1BKRroWCpJ/pools/premium-pool";
+        };
+        console.log(nftLink);
+        iframe.setAttribute("src",nftLink);
+        modal.classList.toggle("show-modal");
+        var closeButton = document.querySelector(".close-button");
+        // closeButton.addEventListener("click", console.log("ABC"));
+      }
+      
+      function windowOnClick(event) {
+          if (event.target === modal) {
+              toggleModal();
+          }
+      };
+
+      window.addEventListener("click", windowOnClick);
+    </script>
+ 
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        
+var createScene = function () {
+    var scene = new BABYLON.Scene(engine);
+
+    scene.gravity = new BABYLON.Vector3(0, -0.75, 0);
+    scene.collisionsEnabled = true;
+    scene.enablePhysics();
+
+
+
+    var camera = new BABYLON.UniversalCamera("UniversalCamera", new BABYLON.Vector3(0, 7, -20), scene);
+
+
+    camera.setTarget(BABYLON.Vector3.Zero());
+    camera.speed  = 0.4;
+    camera.applyGravity = true;
+    camera.ellipsoid = new BABYLON.Vector3(1, 6, 1);
+    camera.checkCollisions = true;
+    camera.attachControl(canvas, true);
+    camera.angularSensibility = 10000; 
+    // Skybox
+    var skybox = BABYLON.Mesh.CreateBox("skyBox", 300.0, scene);
+    var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("textures/skybox", scene);
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+    skybox.material = skyboxMaterial;
+
+    //Controls  WASD
+
+    camera.keysUp.push(87);
+    camera.keysDown.push(83);
+    camera.keysRight.push(68);
+    camera.keysLeft.push(65);
+
+
+    var myGround = BABYLON.MeshBuilder.CreateGround("myGround", { width: 200, height: 200, subdivsions: 4 }, scene);
+
+    var redMat = new BABYLON.StandardMaterial("redMat", scene);
+    redMat.diffuseTexture = new BABYLON.Texture("textures/grass.jpg", scene);
+    myGround.position.x = -13;
+    myGround.position.z = 5;
+    myGround.material = redMat;
+
+    myGround.checkCollisions = true;
+
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+    light.intensity = 2.0;
+
+    // Load room
+    
+    const resultPromise = BABYLON.SceneLoader.ImportMeshAsync("", "https://raw.githubusercontent.com/cuongpo/babylon/main/", "classroom.glb", scene);
+        resultPromise.then((result) => {
+        result.meshes[0].position.y = 0.1;
+        result.meshes[0].scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+        result.meshes[0].checkCollisions = true;
+        result.checkCollisions = true;
+    })
+    
+
+
+    //video
+    var planeOpts = {
+                height: 15.4762, 
+                width: 30.3967, 
+                sideOrientation: BABYLON.Mesh.DOUBLESIDE
+        };
+        var ANote0Video = BABYLON.MeshBuilder.CreatePlane("plane", planeOpts, scene);
+        var vidPos = (new BABYLON.Vector3(3,16.5,-49.25))
+        var vidRotation = new BABYLON.Vector3(0, -Math.PI, 0);
+        ANote0Video.position = vidPos;
+        ANote0Video.rotation = vidRotation;
+        var ANote0VideoMat = new BABYLON.StandardMaterial("m", scene);
+        var ANote0VideoVidTex = new BABYLON.VideoTexture("vidtex","textures/video1.mp4", scene);
+        ANote0VideoMat.diffuseTexture = ANote0VideoVidTex;
+        ANote0VideoMat.roughness = 1;
+        ANote0VideoMat.emissiveColor = new BABYLON.Color3.White();
+        ANote0Video.material = ANote0VideoMat;
+        scene.onPointerObservable.add(function(evt){
+                if(evt.pickInfo.pickedMesh === ANote0Video){
+                    //console.log("picked");
+                        if(ANote0VideoVidTex.video.paused)
+                            ANote0VideoVidTex.video.play();
+                        else
+                            ANote0VideoVidTex.video.pause();
+                        console.log(ANote0VideoVidTex.video.paused?"paused":"playing");
+                }
+        }, BABYLON.PointerEventTypes.POINTERPICK);
+
+
+    return scene;
+
+};
+
+    // core - don't change
+    window.initFunction = async function() {
+                    
+                    
+    var asyncEngineCreation = async function() {
+        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    window.engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        startRenderLoop(engine, canvas);
+        window.scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene                    
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
